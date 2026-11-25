@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WTS — 2D Wind Tunnel Simulator</title>
+<style>
+:root{--ink:#20242a;--muted:#747b84;--line:#e6e8eb;--panel:#fff;--bg:#f5f6f7;--accent:#3978e8;--accent-soft:#edf3ff;--danger:#d94b4b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select{font:inherit}button{cursor:pointer}
+.app{min-height:100vh;display:flex;flex-direction:column}
+.topbar{height:62px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 22px;gap:28px}
+.brand{font-weight:750;font-size:18px;letter-spacing:-.5px;display:flex;align-items:center;gap:9px}.brand-mark{width:25px;height:25px;border-radius:8px;background:#20242a;color:white;display:grid;place-items:center;font-size:14px}
+.topnav{display:flex;gap:7px}.topnav button{border:0;background:transparent;color:#69717a;padding:8px 11px;border-radius:8px}.topnav button.active{background:#f1f3f5;color:#20242a;font-weight:650}
+.topright{margin-left:auto;display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px}.status-dot{width:7px;height:7px;background:#3bb477;border-radius:50%;display:inline-block;margin-right:5px}
+main{width:min(1500px,100%);margin:0 auto;padding:22px;display:flex;flex-direction:column;gap:16px}
+.heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}.heading h1{font-size:23px;letter-spacing:-.7px;margin:0 0 4px}.heading p{margin:0;color:var(--muted);font-size:13px}
+.actions{display:flex;gap:8px;align-items:center}.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 12px;color:#30363d;font-weight:600;font-size:12px}.btn:hover{background:#f7f8fa}.btn.primary{background:var(--accent);border-color:var(--accent);color:white}.btn.primary:hover{background:#2868d4}.btn.danger{color:var(--danger)}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.metric{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px}.metric label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px}.metric strong{font-size:19px;font-weight:680;letter-spacing:-.4px}.metric small{font-size:11px;color:var(--muted);margin-left:4px}
+.workspace{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:14px;align-items:stretch}
+.sim-card,.side-card{background:#fff;border:1px solid var(--line);border-radius:11px;overflow:hidden}.sim-head{height:52px;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 14px;gap:12px}.sim-title{font-weight:680}.sim-sub{color:var(--muted);font-size:11px}.sim-head .spacer{flex:1}
+.toolbar{display:flex;gap:5px;align-items:center}.tool{border:1px solid transparent;background:transparent;color:#69717a;border-radius:7px;padding:7px 9px;font-size:11px;font-weight:600}.tool.active{background:var(--accent-soft);border-color:#d9e5ff;color:#2868d4}.tool:hover{background:#f2f4f6}
+.canvas-wrap{height:min(62vh,610px);min-height:390px;position:relative;background:#fbfcfd}.canvas-wrap canvas{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+.canvas-hint{position:absolute;left:14px;bottom:12px;background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:7px;padding:6px 9px;color:#737b85;font-size:10px;pointer-events:none}
+.canvas-legend{position:absolute;right:13px;top:12px;background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:10px;color:#68717a;pointer-events:none}
+.sim-foot{height:43px;border-top:1px solid var(--line);display:flex;align-items:center;padding:0 14px;gap:12px;color:var(--muted);font-size:11px}.sim-foot .spacer{flex:1}
+.side-card{padding:0}.panel-section{padding:14px;border-bottom:1px solid var(--line)}.panel-section:last-child{border-bottom:0}.section-title{font-size:12px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}.section-title span{font-size:10px;color:var(--muted);font-weight:500}
+.control{margin:11px 0}.control-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:11px;color:#525a64}.control-head output{color:#20242a;font-weight:650;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px}.select{width:100%;border:1px solid var(--line);border-radius:7px;background:#fff;padding:7px 8px;font-size:11px;color:#333}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.mode-btn{border:1px solid var(--line);border-radius:7px;background:#fff;padding:8px 6px;font-size:10px;color:#5d6570}.mode-btn.active{border-color:#b9cffb;background:#f0f5ff;color:#2868d4;font-weight:650}
+.source-list{display:flex;flex-direction:column;gap:6px}.source-row{display:flex;align-items:center;gap:7px;padding:7px;border:1px solid var(--line);border-radius:7px;font-size:10px}.source-row.selected{border-color:#a9c4fa;background:#f5f8ff}.source-row button{margin-left:auto;border:0;background:transparent;color:#89919a;padding:2px 4px}.source-dot{width:8px;height:8px;border-radius:50%;background:#3978e8}.source-dot.point{background:#e69a36}
+.empty{color:#9299a2;font-size:10px;padding:6px 1px}.panel-note{font-size:10px;line-height:1.5;color:#858d96;margin-top:8px}
+.toggle-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#535b65;margin-top:9px}.toggle-row input{accent-color:var(--accent)}
+.bottom-note{color:#89919a;font-size:10px;text-align:center;padding:2px}
+@media(max-width:900px){.workspace{grid-template-columns:1fr}.side-card{display:grid;grid-template-columns:1fr 1fr}.panel-section{border-right:1px solid var(--line)}.canvas-wrap{height:55vh}}
+@media(max-width:600px){main{padding:13px}.topbar{padding:0 13px}.topnav{display:none}.heading{align-items:flex-start;flex-direction:column}.metrics{grid-template-columns:1fr 1fr}.side-card{display:block}.panel-section{border-right:0}.canvas-wrap{min-height:340px;height:48vh}.sim-head{height:auto;min-height:52px;flex-wrap:wrap;padding:9px}.toolbar{width:100%;overflow:auto}.topright{font-size:10px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="topbar">
+  <div class="brand"><span class="brand-mark">↝</span> WTS</div>
+  <nav class="topnav"><button class="active">Wind tunnel</button><button id="helpNav">Guide</button></nav>
+  <div class="topright"><span><i class="status-dot"></i>Local simulation</span><span>2D workspace</span></div>
+</header>
+<main>
+  <div class="heading">
+    <div><h1>Wind tunnel</h1><p>Build a flow environment, introduce air, and observe how it moves around your geometry.</p></div>
+    <div class="actions"><button class="btn" id="clearBtn">Clear board</button><button class="btn primary" id="resetBtn">Reset simulation</button></div>
+  </div>
+  <section class="metrics">
+    <div class="metric"><label>Average flow speed</label><strong id="avgSpeed">0.00</strong><small>m/s</small></div>
+    <div class="metric"><label>Maximum flow speed</label><strong id="maxSpeed">0.00</strong><small>m/s</small></div>
+    <div class="metric"><label>Wind sources</label><strong id="sourceCount">0</strong><small>active</small></div>
+    <div class="metric"><label>Objects</label><strong id="objectCount">0</strong><small>on board</small></div>
+  </section>
+  <section class="workspace">
+    <div class="sim-card">
+      <div class="sim-head">
+        <div><div class="sim-title">Simulation board</div><div class="sim-sub" id="toolDescription">Select a tool to begin building</div></div>
+        <div class="spacer"></div>
+        <div class="toolbar" id="toolbar">
+          <button class="tool active" data-tool="select">Select</button>
+          <button class="tool" data-tool="line">Line source</button>
+          <button class="tool" data-tool="point">Point source</button>
+          <button class="tool" data-tool="free">Free draw</button>
+          <button class="tool" data-tool="rect">Rectangle</button>
+          <button class="tool" data-tool="circle">Circle</button>
+          <button class="tool" data-tool="erase">Erase</button>
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="board"></canvas><div class="canvas-legend" id="legend">Still air · no sources</div><div class="canvas-hint" id="hint">Choose a tool, then draw on the board</div></div>
+      <div class="sim-foot"><span id="simState">Paused · still air</span><span>•</span><span id="gridReadout">Grid 160 × 90</span><span class="spacer"></span><button class="btn" id="pauseBtn">Pause</button></div>
+    </div>
+    <aside class="side-card">
+      <div class="panel-section">
+        <div class="section-title">Air properties <span>Global settings</span></div>
+        <div class="control"><div class="control-head"><label for="speed">Source speed</label><output id="speedVal">8.0 m/s</output></div><input id="speed" type="range" min="0.5" max="25" step=".5" value="8"></div>
+        <div class="control"><div class="control-head"><label for="viscosity">Viscosity</label><output id="viscosityVal">0.020</output></div><input id="viscosity" type="range" min="0" max=".2" step=".001" value=".02"></div>
+        <div class="control"><div class="control-head"><label for="density">Air density</label><output id="densityVal">1.225 kg/m³</output></div><input id="density" type="range" min=".2" max="3" step=".025" value="1.225"></div>
+        <div class="control"><div class="control-head"><label for="strength">Source strength</label><output id="strengthVal">100%</output></div><input id="strength" type="range" min="10" max="200" step="5" value="100"></div>
+      </div>
+      <div class="panel-section">
+        <div class="section-title">Visualization <span>Display mode</span></div>
+        <div class="mode-grid">
+          <button class="mode-btn active" data-mode="particles">Particles</button>
+          <button class="mode-btn" data-mode="streamlines">Streamlines</button>
+          <button class="mode-btn" data-mode="velocity">Velocity map</button>
+          <button class="mode-btn" data-mode="pressure">Pressure map</button>
+        </div>
+        <label class="toggle-row"><span>Show object outlines</span><input type="checkbox" id="showObjects" checked></label>
+        <label class="toggle-row"><span>Show source arrows</span><input type="checkbox" id="showSources" checked></label>
+      </div>
+      <div class="panel-section">
+        <div class="section-title">Wind sources <span id="sourceTotal">0 sources</span></div>
+        <div class="source-list" id="sourceList"><div class="empty">No wind sources yet. Add one using the toolbar.</div></div>
+        <div class="panel-note">Line sources blow in the direction you drag. Point sources radiate outward. Air remains still until you add a source.</div>
+      </div>
+      <div class="panel-section">
+        <div class="section-title">Selected item <span id="selectionType">Nothing selected</span></div>
+        <div id="selectionInfo" class="empty">Select a source or obstacle on the board to edit or delete it.</div>
+        <button class="btn danger" id="deleteSelected" style="width:100%;margin-top:8px" disabled>Delete selected</button>
+      </div>
+    </aside>
+  </section>
+  <div class="bottom-note">FlowLab is an educational 2D flow visualization. Results are qualitative, not validated engineering CFD.</div>
+</main>
+</div>
+<script>
+(() => {
+const canvas=document.getElementById('board'),ctx=canvas.getContext('2d');
+const $=id=>document.getElementById(id);
+const NX=160, NY=90, N=NX*NY;
+let W=800,H=450,dpr=1,tool='select',mode='particles',paused=false,drag=null,selected=null;
+let sources=[],objects=[],particles=[],u=new Float32Array(N),v=new Float32Array(N),u0=new Float32Array(N),v0=new Float32Array(N),pressure=new Float32Array(N),solid=new Uint8Array(N);
+const idx=(x,y)=>Math.max(0,Math.min(NY-1,y))*NX+Math.max(0,Math.min(NX-1,x));
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const settings=()=>({speed:+$('speed').value,visc:+$('viscosity').value,density:+$('density').value,strength:+$('strength').value/100});
+function resize(){const r=canvas.getBoundingClientRect();dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(r.width*dpr);canvas.height=Math.round(r.height*dpr);W=r.width;H=r.height;ctx.setTransform(dpr,0,0,dpr,0,0);draw();}
+new ResizeObserver(resize).observe(canvas);
+function pos(e){const r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height};}
+function gridPos(p){return {x:clamp(Math.floor(p.x*NX),0,NX-1),y:clamp(Math.floor(p.y*NY),0,NY-1)};}
+function addParticle(){particles.push({x:Math.random(),y:Math.random(),age:Math.random()*100});}
+for(let i=0;i<1300;i++)addParticle();
+function setTool(t){tool=t;document.querySelectorAll('.tool').forEach(b=>b.classList.toggle('active',b.dataset.tool===t));const desc={select:'Select and move sources or obstacles',line:'Drag to create a directional line wind source',point:'Click to place an outward-radiating point source',free:'Draw a custom solid obstacle',rect:'Drag to draw a rectangular obstacle',circle:'Drag to draw a circular obstacle',erase:'Click an object or source to remove it'};$('toolDescription').textContent=desc[t];$('hint').textContent=desc[t];canvas.style.cursor=t==='select'?'default':'crosshair';}
+document.querySelectorAll('.tool').forEach(b=>b.addEventListener('click',()=>setTool(b.dataset.tool)));
+document.querySelectorAll('.mode-btn').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.mode;document.querySelectorAll('.mode-btn').forEach(x=>x.classList.toggle('active',x===b));$('legend').textContent=({particles:'Particle tracing',streamlines:'Streamline approximation',velocity:'Velocity magnitude',pressure:'Pressure estimate'})[mode];draw();}));
+['speed','viscosity','density','strength'].forEach(id=>$(id).addEventListener('input',()=>{const s=settings();$('speedVal').textContent=s.speed.toFixed(1)+' m/s';$('viscosityVal').textContent=s.visc.toFixed(3);$('densityVal').textContent=s.density.toFixed(3)+' kg/m³';$('strengthVal').textContent=Math.round(s.strength*100)+'%';}));
+['showObjects','showSources'].forEach(id=>$(id).addEventListener('change',draw));
+function hitTest(p){const x=p.x*W,y=p.y*H;for(let i=sources.length-1;i>=0;i--){const s=sources[i],sx=s.x*W,sy=s.y*H;if(s.type==='point'){if(Math.hypot(x-sx,y-sy)<17)return {kind:'source',item:s};}else{const ex=s.x2*W,ey=s.y2*H;if(distSeg(x,y,sx,sy,ex,ey)<12)return {kind:'source',item:s};}}for(let i=objects.length-1;i>=0;i--){const o=objects[i];if(o.type==='rect'&&x>=Math.min(o.x,o.x2)*W&&x<=Math.max(o.x,o.x2)*W&&y>=Math.min(o.y,o.y2)*H&&y<=Math.max(o.y,o.y2)*H)return {kind:'object',item:o};if(o.type==='circle'&&Math.hypot(x-o.x*W,y-o.y*H)<o.r*Math.min(W,H)+10)return {kind:'object',item:o};if(o.type==='free'&&o.points.some((q,j)=>j&&distSeg(x,y,o.points[j-1].x*W,o.points[j-1].y*H,q.x*W,q.y*H)<10))return {kind:'object',item:o};}return null;}
+function distSeg(px,py,x1,y1,x2,y2){const dx=x2-x1,dy=y2-y1,t=clamp(((px-x1)*dx+(py-y1)*dy)/(dx*dx+dy*dy||1),0,1);return Math.hypot(px-x1-t*dx,py-y1-t*dy);}
+canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);const p=pos(e);
+ if(tool==='point'){const s={id:crypto.randomUUID(),type:'point',x:p.x,y:p.y,speed:settings().speed};sources.push(s);selectItem('source',s);refreshList();return;}
+ if(tool==='select'){const hit=hitTest(p);if(hit){selectItem(hit.kind,hit.item);drag={kind:'move',start:p,item:hit.item,orig:JSON.parse(JSON.stringify(hit.item))};}else{selectItem(null,null);}return;}
+ if(tool==='erase'){const hit=hitTest(p);if(hit){removeItem(hit.item);}return;}
+ drag={kind:'draw',start:p,last:p,points:[p]};
+});
+canvas.addEventListener('pointermove',e=>{if(!drag)return;const p=pos(e);if(drag.kind==='move'){const dx=p.x-drag.start.x,dy=p.y-drag.start.y;const o=drag.item,orig=drag.orig;if(o.type==='point'){o.x=clamp(orig.x+dx,0,1);o.y=clamp(orig.y+dy,0,1);}else if(o.type==='line'){o.x=clamp(orig.x+dx,0,1);o.y=clamp(orig.y+dy,0,1);o.x2=clamp(orig.x2+dx,0,1);o.y2=clamp(orig.y2+dy,0,1);}else if(o.type==='rect'||o.type==='circle'){o.x=clamp(orig.x+dx,0,1);o.y=clamp(orig.y+dy,0,1);if(o.type==='rect'){o.x2=clamp(orig.x2+dx,0,1);o.y2=clamp(orig.y2+dy,0,1);}}else if(o.type==='free')o.points=orig.points.map(q=>({x:clamp(q.x+dx,0,1),y:clamp(q.y+dy,0,1)}));draw();return;}
+ drag.last=p;if(tool==='free')drag.points.push(p);draw();});
+canvas.addEventListener('pointerup',e=>{if(!drag)return;const d=drag,p=pos(e);drag=null;if(d.kind==='move'){refreshList();draw();return;}const a=d.start,b=p;if(tool==='line'&&Math.hypot((b.x-a.x)*W,(b.y-a.y)*H)>8){const s={id:crypto.randomUUID(),type:'line',x:a.x,y:a.y,x2:b.x,y2:b.y,speed:settings().speed};sources.push(s);selectItem('source',s);refreshList();}
+ if(tool==='rect'&&Math.abs(b.x-a.x)>.01&&Math.abs(b.y-a.y)>.01){const o={id:crypto.randomUUID(),type:'rect',x:a.x,y:a.y,x2:b.x,y2:b.y};objects.push(o);selectItem('object',o);}
+ if(tool==='circle'&&Math.hypot((b.x-a.x)*W,(b.y-a.y)*H)>5){const o={id:crypto.randomUUID(),type:'circle',x:a.x,y:a.y,r:Math.hypot((b.x-a.x)*W,(b.y-a.y)*H)/Math.min(W,H)};objects.push(o);selectItem('object',o);}
+ if(tool==='free'&&d.points.length>2){objects.push({id:crypto.randomUUID(),type:'free',points:d.points});selectItem('object',objects[objects.length-1]);}
+ refreshList();draw();});
+function selectItem(kind,item){selected=item?{kind,item}:null;$('selectionType').textContent=item?(kind==='source'?(item.type==='line'?'Line source':'Point source'):item.type+' obstacle'):'Nothing selected';$('selectionInfo').textContent=item?(kind==='source'?`Speed: ${item.speed.toFixed(1)} m/s · ${item.type==='line'?'Directional inlet':'Radial source'}`:'Obstacle selected · drag to move'):'Select a source or obstacle on the board to edit or delete it.';$('deleteSelected').disabled=!item;draw();refreshList();}
+function removeItem(item){sources=sources.filter(x=>x!==item);objects=objects.filter(x=>x!==item);if(selected?.item===item)selectItem(null,null);refreshList();draw();}
+$('deleteSelected').onclick=()=>{if(selected)removeItem(selected.item);};
+function refreshList(){$('sourceCount').textContent=sources.length;$('objectCount').textContent=objects.length;$('sourceTotal').textContent=sources.length+' source'+(sources.length===1?'':'s');$('sourceList').innerHTML='';if(!sources.length){$('sourceList').innerHTML='<div class="empty">No wind sources yet. Add one using the toolbar.</div>';return;}sources.forEach((s,i)=>{const row=document.createElement('div');row.className='source-row'+(selected?.item===s?' selected':'');row.innerHTML=`<i class="source-dot ${s.type==='point'?'point':''}"></i><span>${s.type==='line'?'Line source':'Point source'} ${i+1}</span><span>${s.speed.toFixed(1)} m/s</span><button aria-label="Select source">•••</button>`;row.onclick=()=>selectItem('source',s);row.querySelector('button').onclick=e=>{e.stopPropagation();removeItem(s);};$('sourceList').appendChild(row);});}
+function rebuildSolids(){solid.fill(0);for(let y=0;y<NY;y++)for(let x=0;x<NX;x++){const px=(x+.5)/NX,py=(y+.5)/NY;for(const o of objects){let hit=false;if(o.type==='rect')hit=px>=Math.min(o.x,o.x2)&&px<=Math.max(o.x,o.x2)&&py>=Math.min(o.y,o.y2)&&py<=Math.max(o.y,o.y2);if(o.type==='circle')hit=Math.hypot((px-o.x)*W,(py-o.y)*H)<o.r*Math.min(W,H);if(o.type==='free'){for(let j=1;j<o.points.length;j++)if(distSeg(px*W,py*H,o.points[j-1].x*W,o.points[j-1].y*H,o.points[j].x*W,o.points[j].y*H)<5){hit=true;break;}}if(hit){solid[idx(x,y)]=1;break;}}}}
+function sample(arr,x,y){x=clamp(x,0,NX-1.001);y=clamp(y,0,NY-1.001);const x0=x|0,y0=y|0,fx=x-x0,fy=y-y0;return (1-fy)*((1-fx)*arr[idx(x0,y0)]+fx*arr[idx(x0+1,y0)])+fy*((1-fx)*arr[idx(x0,y0+1)]+fx*arr[idx(x0+1,y0+1)]);}
+function solve(){rebuildSolids();const s=settings();u0.set(u);v0.set(v);
+ // Inject line and point source momentum. A source is the only way to create airflow.
+ for(const src of sources){const speed=src.speed*s.strength, radius=src.type==='point'?9:5;
+  if(src.type==='line'){const dx=src.x2-src.x,dy=src.y2-src.y,len=Math.hypot(dx,dy)||1,vx=dx/len,vy=dy/len;const steps=Math.max(2,Math.ceil(len*NX/2));for(let k=0;k<=steps;k++){const px=src.x+(dx*k/steps),py=src.y+(dy*k/steps),gx=px*NX,gy=py*NY;for(let yy=-radius;yy<=radius;yy++)for(let xx=-radius;xx<=radius;xx++){const d=Math.hypot(xx,yy);if(d>radius)continue;const q=idx(Math.round(gx)+xx,Math.round(gy)+yy),w=(1-d/(radius+1))*.45;u[q]=u[q]*.5+vx*speed*.045*w;v[q]=v[q]*.5+vy*speed*.045*w;}}}
+  else {const gx=src.x*NX,gy=src.y*NY;for(let yy=-radius;yy<=radius;yy++)for(let xx=-radius;xx<=radius;xx++){const d=Math.hypot(xx,yy);if(d<1||d>radius)continue;const q=idx(Math.round(gx)+xx,Math.round(gy)+yy),w=(1-d/(radius+1))*.32;u[q]+=xx/d*speed*.035*w;v[q]+=yy/d*speed*.035*w;}}
+ }
+ // Diffusion approximates viscous momentum spreading.
+ const amount=s.visc*16; if(amount>0){for(let it=0;it<2;it++){for(let y=1;y<NY-1;y++)for(let x=1;x<NX-1;x++){const q=idx(x,y);if(solid[q])continue;u[q]=(u[q]+amount*(u[idx(x-1,y)]+u[idx(x+1,y)]+u[idx(x,y-1)]+u[idx(x,y+1)]))/(1+4*amount);v[q]=(v[q]+amount*(v[idx(x-1,y)]+v[idx(x+1,y)]+v[idx(x,y-1)]+v[idx(x,y+1)]))/(1+4*amount);}}}
+ // Incompressibility projection: estimate pressure from velocity divergence.
+ pressure.fill(0);for(let y=1;y<NY-1;y++)for(let x=1;x<NX-1;x++){const q=idx(x,y);if(!solid[q])pressure[q]=-.5*((u[idx(x+1,y)]-u[idx(x-1,y)])+(v[idx(x,y+1)]-v[idx(x,y-1)]));}
+ for(let it=0;it<8;it++)for(let y=1;y<NY-1;y++)for(let x=1;x<NX-1;x++){const q=idx(x,y);if(!solid[q])pressure[q]=(pressure[idx(x-1,y)]+pressure[idx(x+1,y)]+pressure[idx(x,y-1)]+pressure[idx(x,y+1)]-pressure[q])*.25+pressure[q]*.0;}
+ for(let y=1;y<NY-1;y++)for(let x=1;x<NX-1;x++){const q=idx(x,y);if(solid[q]){u[q]=0;v[q]=0;continue;}u[q]-=.5*(pressure[idx(x+1,y)]-pressure[idx(x-1,y)]);v[q]-=.5*(pressure[idx(x,y+1)]-pressure[idx(x,y-1)]);}
+ // Advect velocity field through itself.
+ u0.set(u);v0.set(v);const dt=.12;
+ for(let y=1;y<NY-1;y++)for(let x=1;x<NX-1;x++){const q=idx(x,y);if(solid[q])continue;const bx=x-u0[q]*dt,by=y-v0[q]*dt;u[q]=sample(u0,bx,by)*.995;v[q]=sample(v0,bx,by)*.995;}
+}
+function drawBackground(){ctx.fillStyle='#fbfcfd';ctx.fillRect(0,0,W,H);ctx.strokeStyle='#f0f2f4';ctx.lineWidth=1;const step=40;for(let x=step;x<W;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}for(let y=step;y<H;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}}
+function draw(){if(!W||!H)return;drawBackground();if(mode==='velocity'||mode==='pressure')drawHeatmap();if(mode==='streamlines')drawStreamlines();if(mode==='particles')drawParticles();if($('showObjects').checked)drawObjects();if($('showSources').checked)drawSources();if(drag?.kind==='draw')drawPreview();updateMetrics();}
+function drawHeatmap(){const cw=W/NX,ch=H/NY;for(let y=0;y<NY;y+=2)for(let x=0;x<NX;x+=2){const q=idx(x,y),val=mode==='velocity'?Math.hypot(u[q],v[q]):Math.abs(pressure[q])*12;if(val<.03)continue;const t=clamp(val/(mode==='velocity'?12:1),0,1);ctx.fillStyle=mode==='velocity'?`rgba(${Math.round(45+205*t)},${Math.round(130-85*t)},${Math.round(230-190*t)},${.12+.48*t})`:`rgba(${Math.round(55+190*t)},${Math.round(125-80*t)},${Math.round(220-190*t)},${.12+.48*t})`;ctx.fillRect(x*cw,y*ch,cw*2+1,ch*2+1);}}
+function drawParticles(){ctx.fillStyle='rgba(54,104,190,.58)';for(const p of particles){ctx.beginPath();ctx.arc(p.x*W,p.y*H,1.35,0,Math.PI*2);ctx.fill();}}
+function drawStreamlines(){ctx.strokeStyle='rgba(49,104,190,.48)';ctx.lineWidth=1;for(let sy=15;sy<H;sy+=25){let x=2,y=sy;ctx.beginPath();ctx.moveTo(x,y);for(let i=0;i<220&&x<W-2&&y>2&&y<H-2;i++){const gx=x/W*NX,gy=y/H*NY,vx=sample(u,gx,gy),vy=sample(v,gx,gy);x+=vx*1.6;y+=vy*1.6;ctx.lineTo(x,y);}ctx.stroke();}}
+function drawObjects(){ctx.save();ctx.fillStyle='rgba(66,74,84,.14)';ctx.strokeStyle='#525c68';ctx.lineWidth=2;for(const o of objects){ctx.beginPath();if(o.type==='rect'){ctx.rect(o.x*W,o.y*H,(o.x2-o.x)*W,(o.y2-o.y)*H);ctx.fill();ctx.stroke();}else if(o.type==='circle'){ctx.arc(o.x*W,o.y*H,o.r*Math.min(W,H),0,Math.PI*2);ctx.fill();ctx.stroke();}else{ctx.moveTo(o.points[0].x*W,o.points[0].y*H);o.points.slice(1).forEach(p=>ctx.lineTo(p.x*W,p.y*H));ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=9;ctx.stroke();ctx.lineWidth=2;}}ctx.restore();if(selected?.kind==='object')highlight(selected.item);}
+function highlight(o){ctx.save();ctx.strokeStyle='#3978e8';ctx.setLineDash([5,4]);ctx.lineWidth=1.5;ctx.beginPath();if(o.type==='rect')ctx.rect(Math.min(o.x,o.x2)*W-4,Math.min(o.y,o.y2)*H-4,Math.abs(o.x2-o.x)*W+8,Math.abs(o.y2-o.y)*H+8);else if(o.type==='circle')ctx.arc(o.x*W,o.y*H,o.r*Math.min(W,H)+5,0,Math.PI*2);else{ctx.moveTo(o.points[0].x*W,o.points[0].y*H);o.points.forEach(p=>ctx.lineTo(p.x*W,p.y*H));}ctx.stroke();ctx.restore();}
+function drawSources(){sources.forEach((s,i)=>{ctx.save();ctx.strokeStyle=selected?.item===s?'#1c5fcf':'#3978e8';ctx.fillStyle=ctx.strokeStyle;ctx.lineWidth=2.5;if(s.type==='line'){const x=s.x*W,y=s.y*H,x2=s.x2*W,y2=s.y2*H;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x2,y2);ctx.stroke();arrow(x,y,x2,y2,ctx.strokeStyle);ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();}else{const x=s.x*W,y=s.y*H;ctx.beginPath();ctx.arc(x,y,7,0,Math.PI*2);ctx.stroke();for(let a=0;a<8;a++){const ang=a*Math.PI/4;arrow(x+Math.cos(ang)*9,y+Math.sin(ang)*9,x+Math.cos(ang)*24,y+Math.sin(ang)*24,ctx.strokeStyle);}}ctx.restore();});}
+function arrow(x,y,x2,y2,color){const a=Math.atan2(y2-y,x2-x);ctx.strokeStyle=color;ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x2,y2);ctx.stroke();ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-8*Math.cos(a-.45),y2-8*Math.sin(a-.45));ctx.lineTo(x2-8*Math.cos(a+.45),y2-8*Math.sin(a+.45));ctx.closePath();ctx.fill();}
+function drawPreview(){const a=drag.start,b=drag.last;ctx.save();ctx.strokeStyle='#3978e8';ctx.fillStyle='rgba(57,120,232,.10)';ctx.setLineDash([5,4]);ctx.lineWidth=2;ctx.beginPath();if(tool==='line'){arrow(a.x*W,a.y*H,b.x*W,b.y*H,'#3978e8');}else if(tool==='rect'){ctx.rect(a.x*W,a.y*H,(b.x-a.x)*W,(b.y-a.y)*H);ctx.fill();ctx.stroke();}else if(tool==='circle'){ctx.arc(a.x*W,a.y*H,Math.hypot((b.x-a.x)*W,(b.y-a.y)*H),0,Math.PI*2);ctx.fill();ctx.stroke();}else if(tool==='free'){ctx.moveTo(drag.points[0].x*W,drag.points[0].y*H);drag.points.forEach(p=>ctx.lineTo(p.x*W,p.y*H));ctx.stroke();}ctx.restore();}
+function updateMetrics(){let sum=0,max=0,count=0;for(let i=0;i<N;i+=8){const sp=Math.hypot(u[i],v[i]);sum+=sp;max=Math.max(max,sp);count++;}$('avgSpeed').textContent=(sum/count).toFixed(2);$('maxSpeed').textContent=max.toFixed(2);$('sourceCount').textContent=sources.length;$('objectCount').textContent=objects.length;}
+function step(){if(!paused){solve();if(mode==='particles'){for(const p of particles){const gx=p.x*NX,gy=p.y*NY,vx=sample(u,gx,gy),vy=sample(v,gx,gy);p.x+=vx*.00065;p.y+=vy*.00065;p.age++;if(p.x<0||p.x>1||p.y<0||p.y>1||p.age>1600){p.x=Math.random();p.y=Math.random();p.age=0;}}}draw();}requestAnimationFrame(step);}
+$('pauseBtn').onclick=()=>{paused=!paused;$('pauseBtn').textContent=paused?'Resume':'Pause';$('simState').textContent=paused?'Paused':'Running';};
+$('clearBtn').onclick=()=>{sources=[];objects=[];selected=null;u.fill(0);v.fill(0);pressure.fill(0);particles.forEach(p=>{p.x=Math.random();p.y=Math.random();});selectItem(null,null);refreshList();draw();};
+$('resetBtn').onclick=()=>{u.fill(0);v.fill(0);pressure.fill(0);particles.forEach(p=>{p.x=Math.random();p.y=Math.random();p.age=0;});draw();};
+$('helpNav').onclick=()=>alert('Quick start\\n\\n1. Choose Line source and drag in the direction air should travel.\\n2. Choose Point source and click to create outward airflow.\\n3. Draw obstacles with Free draw, Rectangle, or Circle.\\n4. Adjust speed and viscosity in Air properties.\\n5. Switch visualization modes to inspect the flow.\\n\\nThe board starts with still air. This is an educational qualitative fluid-flow prototype, not validated engineering CFD.');
+$('simState').textContent='Ready · still air';$('legend').textContent='Still air · no sources';
+refreshList();resize();step();
+})();
+</script>
+</body>
+</html>
